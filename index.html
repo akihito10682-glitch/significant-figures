@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>有効数字の計算練習</title>
+<style>
+  :root{--bg:#f6f7f9;--card:#fff;--ink:#1f2933;--sub:#5f6b7a;--line:#d9dee5;--accent:#2563eb;--ok:#15803d;--okbg:#e7f6ec;--ng:#b91c1c;--ngbg:#fdecec;--fire:#ea580c;--p1:#e7f0ff;--p2:#fff1e0;--alt:#e8590c}
+  @media (prefers-color-scheme:dark){:root{--bg:#14171c;--card:#1d2128;--ink:#e8ebef;--sub:#9aa5b1;--line:#333a44;--accent:#6b9bff;--ok:#5fd38a;--okbg:#14301f;--ng:#ff8a8a;--ngbg:#3a1a1a;--fire:#fb923c;--p1:#18263d;--p2:#3a2a16}}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;line-height:1.6}
+  [hidden]{display:none!important}
+  main{max-width:640px;margin:0 auto;padding:12px 16px 60px}
+  header.top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0 12px}
+  h1{font-size:1.2rem;margin:0}
+  .backlink{background:none;border:0;color:var(--sub);cursor:pointer;font:inherit;font-size:.85rem;padding:0 0 4px;font-weight:400}
+  .streak{text-align:right;line-height:1.2;white-space:nowrap}
+  .streak .num{font-size:1.7rem;font-weight:800;color:var(--fire);font-variant-numeric:tabular-nums}
+  .streak .lbl{font-size:.75rem;color:var(--sub)}
+  .streak .best{font-size:.72rem;color:var(--sub);margin-top:2px}
+  .streak.pop .num{animation:pop .4s}
+  @keyframes pop{40%{transform:scale(1.35)}}
+  .lead{color:var(--sub);font-size:.88rem;margin:0 0 14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+  .card.ok{border-color:var(--ok)} .card.ng{border-color:var(--ng)}
+  button{font:inherit;border:0;border-radius:8px;cursor:pointer;color:var(--ink)}
+  sup{font-size:.7em}
+
+  /* menu */
+  .menu{display:flex;flex-direction:column;gap:12px;margin-top:20px}
+  .menu .big{background:var(--accent);color:#fff;padding:18px;font-size:1.1rem;font-weight:700}
+  .menu .big.alt{background:var(--alt)}
+  .menu p{color:var(--sub);font-size:.85rem;margin:0}
+
+  /* ---- 問題ボード（ひとり用の標準サイズ） ---- */
+  .board h2{font-size:.95rem;margin:0 0 6px;color:var(--accent)}
+  .eq{font-size:1.4rem;margin:6px 0 12px;font-family:"Times New Roman","Hiragino Mincho ProN",serif}
+  .frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 4px}
+  .frac .n{border-bottom:1.5px solid currentColor;padding:0 6px}
+  .frac .d{padding:0 6px}
+  .q{margin:12px 0 6px;font-size:.95rem}
+  .row{display:flex;align-items:center;gap:8px;margin:6px 0;font-family:"Times New Roman",serif;font-size:1.1rem}
+  .chips{display:inline-flex;gap:6px}
+  .chip{background:var(--card);border:1px solid var(--line);border-bottom-width:3px;padding:6px 14px;font-size:1rem;font-weight:700}
+  .chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .opt{background:var(--card);border:1px solid var(--line);border-bottom-width:3px;padding:10px;text-align:left;font-family:"Times New Roman",serif;font-size:1.15rem}
+  .opt.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--card))}
+  .acts{margin-top:14px}
+  .act{background:var(--accent);color:#fff;font-weight:700;padding:11px 24px}
+  .act:disabled{opacity:.5}
+  .result{margin-top:12px;padding:10px 12px;border-radius:8px;font-size:.92rem;display:none}
+  .result.ok{display:block;background:var(--okbg);color:var(--ok)}
+  .result.ng{display:block;background:var(--ngbg);color:var(--ng)}
+  .result b{display:block;margin-bottom:2px}
+  .result .ex{color:var(--ink);margin-top:4px}
+  .locked .chip,.locked .opt{pointer-events:none;opacity:.8}
+
+  /* ---- 対戦モード ---- */
+  #battle{position:fixed;inset:0;display:flex;gap:6px;background:var(--ink)}
+  .half{container-type:size;position:relative;overflow:hidden;flex:1 1 0;min-width:0;min-height:0}
+  .half.hA{background:var(--p1)} .half.hB{background:var(--p2)}
+  .inner{container-type:size;position:absolute;top:0;left:0}
+  .pad{position:relative;width:100%;height:100%;padding:2.2cqh 3cqw 2cqh;display:flex;flex-direction:column;overflow:hidden}
+  @media (orientation:landscape){
+    #battle{flex-direction:row}
+    .inner{width:100cqh;height:100cqw}
+    .half.hA .inner{transform-origin:0 0;transform:translateX(100cqw) rotate(90deg)}
+    .half.hB .inner{transform-origin:0 0;transform:translateY(100cqh) rotate(-90deg)}
+  }
+  @media (orientation:portrait){
+    #battle{flex-direction:column}
+    .inner{width:100cqw;height:100cqh}
+    .half.hA .inner{transform:rotate(180deg)}
+  }
+  .hd{display:flex;align-items:center;gap:2.5cqw;font-size:4.4cqh;font-weight:700;flex:0 0 auto;padding-bottom:1.2cqh}
+  .hd .dots{letter-spacing:.25em;font-size:5cqh}
+  .hd .dots .on{color:var(--ok)} .hd .dots .off{color:var(--line)}
+  .hd .tm{margin-left:auto;font-variant-numeric:tabular-nums}
+  .hbtn{font-size:3.4cqh;font-weight:600;background:transparent;border:1px solid var(--sub);color:var(--sub);padding:.6cqh 2cqw;border-radius:1.4cqh}
+  .bwrap{flex:1;min-height:0}
+  .board.compact{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:3cqw;height:100%}
+  .board.compact .colL,.board.compact .colR{min-height:0;display:flex;flex-direction:column}
+  .board.compact h2{font-size:3.6cqh;margin:0 0 .8cqh}
+  .board.compact .eq{font-size:6.6cqh;margin:.4cqh 0 1.6cqh}
+  .board.compact .q{font-size:3.6cqh;margin:0 0 1.2cqh}
+  .board.compact .row{font-size:4.2cqh;gap:1.2cqw;margin:.8cqh 0;white-space:nowrap}
+  .board.compact .chips{gap:.7cqw}
+  .board.compact .chip{font-size:4.2cqh;padding:.8cqh 0;border-radius:1.2cqh;min-width:5.6cqh}
+  .board.compact .opts{gap:1.4cqh 1.4cqw}
+  .board.compact .opt{font-size:4.8cqh;padding:1.6cqh 1.4cqw;border-radius:1.6cqh}
+  .board.compact .acts{margin-top:2cqh}
+  .board.compact .act{width:100%;font-size:5cqh;padding:1.8cqh;border-radius:1.8cqh}
+  .board.compact .result{margin-top:1.6cqh;padding:1cqh 1.4cqw;font-size:3.3cqh;border-radius:1.4cqh;line-height:1.4}
+  .overlay{position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 94%,transparent);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.5cqh;text-align:center;z-index:10}
+  .overlay .count{font-size:34cqh;font-weight:800;line-height:1}
+  .overlay .mid{font-size:15cqh;font-weight:800;line-height:1.1}
+  .overlay .sm{font-size:5cqh;color:var(--sub)}
+  .overlay .row2{display:flex;gap:3cqw;margin-top:2cqh}
+  .overlay button{font-size:5cqh;font-weight:700;padding:2cqh 4cqw;border-radius:2cqh;background:var(--accent);color:#fff}
+  .overlay button.ghost{background:transparent;color:var(--sub);border:1px solid var(--sub)}
+  .overlay.win .mid{color:var(--ok)} .overlay.lose .mid{color:var(--ng)}
+</style>
+</head>
+<body>
+
+<section id="menu">
+  <main>
+    <h1>有効数字の計算練習</h1>
+    <div class="menu">
+      <button class="big" id="goSolo">ひとりで練習</button>
+      <button class="big alt" id="goBattle">⚔ 対戦モード（2人・3問勝負）</button>
+      <p>対戦モード：タブレットを机に平置きし、2人が短い方の辺に向かい合って座ります。画面が左右（縦向きなら上下）に分かれ、それぞれの向きで表示されます。先に3問すべて解いた方の勝ちです。</p>
+    </div>
+  </main>
+</section>
+
+<section id="solo" hidden>
+  <main>
+    <button class="backlink" id="soloBack">← メニューへ</button>
+    <header class="top">
+      <h1>有効数字の計算練習</h1>
+      <div class="streak" id="streak"><div class="lbl">連続正解</div><div class="num" id="sn">0</div><div class="best">最高 <span id="sb">0</span></div></div>
+    </header>
+    <p class="lead">「有効数字の桁数」と「正しく丸めた答え」の両方が合っていれば正解です（四捨五入）。</p>
+    <div class="card" id="soloCard"></div>
+  </main>
+</section>
+
+<section id="battle" hidden>
+  <div class="half hA"><div class="inner"><div class="pad" id="padA"></div></div></div>
+  <div class="half hB"><div class="inner"><div class="pad" id="padB"></div></div></div>
+</section>
+
+<script>
+const P = [{"k": "mul", "nums": ["1.2", "4.56"], "sf": [2, 3], "res": "= 5.472", "ok": "5.5", "ds": ["5.47", "5", "5.4"], "ex": "最も桁数が少ないのは 1.2（2桁）。答えも2桁にそろえる。 5.472 を2桁に四捨五入して 5.5。"}, {"k": "div", "nums": ["3.0", "1.50"], "sf": [2, 3], "res": "= 2", "ok": "2.0", "ds": ["2.00", "2", "2.000"], "ex": "最も桁数が少ないのは 3.0（2桁）。答えも2桁にそろえる。 2 を2桁に四捨五入して 2.0。末尾の0も有効数字なので省略しない。"}, {"k": "muldiv", "nums": ["6.0", "2.50", "4.0"], "sf": [2, 3, 2], "res": "= 3.75", "ok": "3.8", "ds": ["3.75", "4", "3.7"], "ex": "最も桁数が少ないのは 6.0 と 4.0（ともに2桁）。答えも2桁にそろえる。 3.75 を2桁に四捨五入して 3.8。"}, {"k": "mul", "nums": ["4.25", "0.80"], "sf": [3, 2], "res": "= 3.4", "ok": "3.4", "ds": ["3.40", "3", "3.400"], "ex": "最も桁数が少ないのは 0.80（2桁）。答えも2桁にそろえる。 3.4 を2桁に四捨五入して 3.4。"}, {"k": "mul", "nums": ["7.2", "3.14"], "sf": [2, 3], "res": "= 22.608", "ok": "23", "ds": ["22.6", "2 × 10<sup>1</sup>", "22"], "ex": "最も桁数が少ないのは 7.2（2桁）。答えも2桁にそろえる。 22.608 を2桁に四捨五入して 23。"}, {"k": "muldiv", "nums": ["5.00", "4.2", "2.0"], "sf": [3, 2, 2], "res": "= 10.5", "ok": "11", "ds": ["10.5", "1 × 10<sup>1</sup>", "10"], "ex": "最も桁数が少ないのは 4.2 と 2.0（ともに2桁）。答えも2桁にそろえる。 10.5 を2桁に四捨五入して 11。"}, {"k": "div", "nums": ["8.12", "2.0"], "sf": [3, 2], "res": "= 4.06", "ok": "4.1", "ds": ["4.06", "4", "4.0"], "ex": "最も桁数が少ないのは 2.0（2桁）。答えも2桁にそろえる。 4.06 を2桁に四捨五入して 4.1。"}, {"k": "mul", "nums": ["1.05", "2.345"], "sf": [3, 4], "res": "= 2.46225", "ok": "2.46", "ds": ["2.462", "2.5", "2.4623"], "ex": "最も桁数が少ないのは 1.05（3桁）。答えも3桁にそろえる。 2.46225 を3桁に四捨五入して 2.46。"}, {"k": "muldiv", "nums": ["9.0", "1.23", "3.00"], "sf": [2, 3, 3], "res": "= 3.69", "ok": "3.7", "ds": ["3.69", "4", "3.6"], "ex": "最も桁数が少ないのは 9.0（2桁）。答えも2桁にそろえる。 3.69 を2桁に四捨五入して 3.7。"}, {"k": "mul", "nums": ["6.40", "0.50"], "sf": [3, 2], "res": "= 3.2", "ok": "3.2", "ds": ["3.20", "3", "3.200"], "ex": "最も桁数が少ないのは 0.50（2桁）。答えも2桁にそろえる。 3.2 を2桁に四捨五入して 3.2。"}, {"k": "mul", "nums": ["2.5", "3.14"], "sf": [2, 3], "res": "= 7.85", "ok": "7.9", "ds": ["7.85", "8", "7.8"], "ex": "最も桁数が少ないのは 2.5（2桁）。答えも2桁にそろえる。 7.85 を2桁に四捨五入して 7.9。"}, {"k": "div", "nums": ["12.0", "4.0"], "sf": [3, 2], "res": "= 3", "ok": "3.0", "ds": ["3.00", "3", "3.000"], "ex": "最も桁数が少ないのは 4.0（2桁）。答えも2桁にそろえる。 3 を2桁に四捨五入して 3.0。末尾の0も有効数字なので省略しない。"}, {"k": "mul", "nums": ["0.250", "8.0"], "sf": [3, 2], "res": "= 2", "ok": "2.0", "ds": ["2.00", "2", "2.000"], "ex": "最も桁数が少ないのは 8.0（2桁）。答えも2桁にそろえる。 2 を2桁に四捨五入して 2.0。末尾の0も有効数字なので省略しない。"}, {"k": "mul", "nums": ["9.81", "1.5"], "sf": [3, 2], "res": "= 14.715", "ok": "15", "ds": ["14.7", "1 × 10<sup>1</sup>", "14"], "ex": "最も桁数が少ないのは 1.5（2桁）。答えも2桁にそろえる。 14.715 を2桁に四捨五入して 15。"}, {"k": "div", "nums": ["15.0", "0.40"], "sf": [3, 2], "res": "= 37.5", "ok": "38", "ds": ["37.5", "4 × 10<sup>1</sup>", "37"], "ex": "最も桁数が少ないのは 0.40（2桁）。答えも2桁にそろえる。 37.5 を2桁に四捨五入して 38。"}, {"k": "mul", "nums": ["6.02", "2.0"], "sf": [3, 2], "res": "= 12.04", "ok": "12", "ds": ["12.0", "1 × 10<sup>1</sup>", "12.04"], "ex": "最も桁数が少ないのは 2.0（2桁）。答えも2桁にそろえる。 12.04 を2桁に四捨五入して 12。"}, {"k": "div", "nums": ["100.0", "3.0"], "sf": [4, 2], "res": "≒ 33.33333", "ok": "33", "ds": ["33.3", "3 × 10<sup>1</sup>", "33.33"], "ex": "最も桁数が少ないのは 3.0（2桁）。答えも2桁にそろえる。 33.33333 を2桁に四捨五入して 33。"}, {"k": "muldiv", "nums": ["3.5", "2.00", "1.20"], "sf": [2, 3, 3], "res": "≒ 5.83333", "ok": "5.8", "ds": ["5.83", "6", "5.833"], "ex": "最も桁数が少ないのは 3.5（2桁）。答えも2桁にそろえる。 5.83333 を2桁に四捨五入して 5.8。"}, {"k": "mul", "nums": ["1.008", "2.5"], "sf": [4, 2], "res": "= 2.52", "ok": "2.5", "ds": ["2.52", "3", "2.520"], "ex": "最も桁数が少ないのは 2.5（2桁）。答えも2桁にそろえる。 2.52 を2桁に四捨五入して 2.5。"}, {"k": "div", "nums": ["5.60", "2.0"], "sf": [3, 2], "res": "= 2.8", "ok": "2.8", "ds": ["2.80", "3", "2.800"], "ex": "最も桁数が少ないのは 2.0（2桁）。答えも2桁にそろえる。 2.8 を2桁に四捨五入して 2.8。"}, {"k": "mul", "nums": ["0.0450", "22.4"], "sf": [3, 3], "res": "= 1.008", "ok": "1.01", "ds": ["1.008", "1.0", "1.00"], "ex": "最も桁数が少ないのは 0.0450 と 22.4（ともに3桁）。答えも3桁にそろえる。 1.008 を3桁に四捨五入して 1.01。"}, {"k": "mul", "nums": ["18.0", "0.25"], "sf": [3, 2], "res": "= 4.5", "ok": "4.5", "ds": ["4.50", "5", "4.500"], "ex": "最も桁数が少ないのは 0.25（2桁）。答えも2桁にそろえる。 4.5 を2桁に四捨五入して 4.5。"}, {"k": "muldiv", "nums": ["4.00", "1.5", "2.50"], "sf": [3, 2, 3], "res": "= 2.4", "ok": "2.4", "ds": ["2.40", "2", "2.400"], "ex": "最も桁数が少ないのは 1.5（2桁）。答えも2桁にそろえる。 2.4 を2桁に四捨五入して 2.4。"}, {"k": "div", "nums": ["7.5", "2.50"], "sf": [2, 3], "res": "= 3", "ok": "3.0", "ds": ["3.00", "3", "3.000"], "ex": "最も桁数が少ないのは 7.5（2桁）。答えも2桁にそろえる。 3 を2桁に四捨五入して 3.0。末尾の0も有効数字なので省略しない。"}, {"k": "mul", "nums": ["3.14", "2.2"], "sf": [3, 2], "res": "= 6.908", "ok": "6.9", "ds": ["6.91", "7", "6.908"], "ex": "最も桁数が少ないのは 2.2（2桁）。答えも2桁にそろえる。 6.908 を2桁に四捨五入して 6.9。"}, {"k": "mul", "nums": ["8.31", "3.0"], "sf": [3, 2], "res": "= 24.93", "ok": "25", "ds": ["24.9", "2 × 10<sup>1</sup>", "24"], "ex": "最も桁数が少ないのは 3.0（2桁）。答えも2桁にそろえる。 24.93 を2桁に四捨五入して 25。"}, {"k": "mul", "nums": ["0.75", "1.234"], "sf": [2, 4], "res": "= 0.9255", "ok": "0.93", "ds": ["0.926", "0.9", "0.92"], "ex": "最も桁数が少ないのは 0.75（2桁）。答えも2桁にそろえる。 0.9255 を2桁に四捨五入して 0.93。"}, {"k": "div", "nums": ["44.0", "18.0"], "sf": [3, 3], "res": "≒ 2.44444", "ok": "2.44", "ds": ["2.444", "2.4", "2.4444"], "ex": "最も桁数が少ないのは 44.0 と 18.0（ともに3桁）。答えも3桁にそろえる。 2.44444 を3桁に四捨五入して 2.44。"}, {"k": "muldiv", "nums": ["2.50", "4.0", "3.0"], "sf": [3, 2, 2], "res": "≒ 3.33333", "ok": "3.3", "ds": ["3.33", "3", "3.333"], "ex": "最も桁数が少ないのは 4.0 と 3.0（ともに2桁）。答えも2桁にそろえる。 3.33333 を2桁に四捨五入して 3.3。"}, {"k": "mul", "nums": ["56.0", "0.50"], "sf": [3, 2], "res": "= 28", "ok": "28", "ds": ["28.0", "3 × 10<sup>1</sup>", "28.00"], "ex": "最も桁数が少ないのは 0.50（2桁）。答えも2桁にそろえる。 28 を2桁に四捨五入して 28。"}];
+const circ="①②③④";
+const BATTLE_N=3, PENALTY_MS=3000, NEXT_MS=1500;
+
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function prepare(p){
+  const opts=shuffle([{t:p.ok,c:true},...p.ds.map(t=>({t,c:false}))]);
+  return {p,opts,ans:opts.findIndex(o=>o.c)};
+}
+function eqHTML(p){
+  const r=p.res;
+  if(p.k==="mul") return `${p.nums[0]} × ${p.nums[1]} ${r}`;
+  if(p.k==="div") return `${p.nums[0]} ÷ ${p.nums[1]} ${r}`;
+  return `<span class="frac"><span class="n">${p.nums[0]} × ${p.nums[1]}</span><span class="d">${p.nums[2]}</span></span> ${r}`;
+}
+
+/* ---------- 問題ボード（ひとり用・対戦用 共通） ---------- */
+function Board(root, items, o){
+  let idx=0, dsel=[], csel=-1, locked=false, done=false, dead=false;
+  const timers=[];
+  const later=(fn,ms)=>{const t=setTimeout(()=>{if(!dead)fn()},ms);timers.push(t);return t;};
+  const $=s=>root.querySelector(s);
+
+  function render(){
+    const it=items[idx], p=it.p;
+    dsel=p.nums.map(()=>0); csel=-1; locked=false; done=false;
+    root.innerHTML=`
+      <div class="board ${o.compact?'compact':''}">
+        <div class="colL">
+          <h2>問題</h2>
+          <div class="eq">${eqHTML(p)}</div>
+          <div class="q"><b>問1</b>（有効数字の確認）</div>
+          ${p.nums.map((n,k)=>`<div class="row"><span>${n} は</span><span class="chips" data-k="${k}">${[1,2,3,4,5].map(v=>`<button class="chip" data-v="${v}">${v}</button>`).join('')}</span><span>桁</span></div>`).join('')}
+        </div>
+        <div class="colR">
+          <div class="q"><b>問2</b>（最終的な答え）丸めた答えを選べ。</div>
+          <div class="opts">${it.opts.map((op,k)=>`<button class="opt" data-k="${k}">${circ[k]} ${op.t}</button>`).join('')}</div>
+          <div class="acts"><button class="act" data-go>答え合わせ</button></div>
+          <div class="result"></div>
+        </div>
+      </div>`;
+    root.querySelectorAll('.chips').forEach(c=>{
+      c.querySelectorAll('.chip').forEach(b=>{
+        b.onclick=()=>{ if(locked||done) return; dsel[+c.dataset.k]=+b.dataset.v; c.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===b)); };
+      });
+    });
+    root.querySelectorAll('.opt').forEach(b=>{
+      b.onclick=()=>{ if(locked||done) return; csel=+b.dataset.k; root.querySelectorAll('.opt').forEach(x=>x.classList.toggle('on',x===b)); };
+    });
+    $('[data-go]').onclick=check;
+  }
+  function setLocked(v){ locked=v; $('.board').classList.toggle('locked',v); }
+  function check(){
+    if(done){ if(!o.battle) o.onNext&&o.onNext(); return; }
+    if(locked) return;
+    const it=items[idx], p=it.p, res=$('.result');
+    if(dsel.some(v=>!v)||csel<0){ res.className='result ng'; res.innerHTML='<b>未入力があります</b>問1・問2をすべて選んでください。'; return; }
+    const d1=dsel.every((v,k)=>v===p.sf[k]), d2=csel===it.ans, ok=d1&&d2;
+    if(o.battle){
+      if(!ok){
+        setLocked(true); let left=Math.ceil(o.penalty/1000);
+        res.className='result ng'; res.innerHTML=`<b>ミス！ <span data-left>${left}</span>秒ロック</b>`;
+        const iv=setInterval(()=>{ left--; const s=res.querySelector('[data-left]'); if(s)s.textContent=Math.max(left,0); },1000);
+        later(()=>{ clearInterval(iv); render(); }, o.penalty);
+        return;
+      }
+      done=true; setLocked(true);
+      o.onSolve&&o.onSolve(idx);
+      if(idx+1>=items.length){ o.onFinish&&o.onFinish(); return; }
+      res.className='result ok'; res.innerHTML=`<b>正解！ 答え：${p.ok}</b>${p.ex}`;
+      later(()=>{ idx++; render(); }, o.nextMs);
+    } else {
+      done=true; setLocked(true);
+      res.className='result '+(ok?'ok':'ng');
+      res.innerHTML=`<b>${ok?'正解！':'不正解'}</b>問1：${d1?'○':'×'}（正解：${p.nums.map((n,k)=>`${n}＝${p.sf[k]}桁`).join('、')}）<br>問2：${d2?'○':'×'}（正解：${circ[it.ans]} ${p.ok}）<div class="ex">${p.ex}</div>`;
+      $('[data-go]').textContent='次へ';
+      o.onResult&&o.onResult(ok);
+    }
+  }
+  return { start:render, destroy(){ dead=true; timers.forEach(clearTimeout); root.innerHTML=''; } };
+}
+
+/* ---------- 画面切り替え ---------- */
+const views={menu:document.getElementById('menu'),solo:document.getElementById('solo'),battle:document.getElementById('battle')};
+function show(n){ Object.entries(views).forEach(([k,v])=>v.hidden=(k!==n)); window.scrollTo(0,0); }
+
+/* ---------- ひとりで練習 ---------- */
+let soloBoard=null, deck=[], lastIdx=-1, streak=0, best=0;
+function nextIndex(){
+  if(deck.length===0){
+    deck=shuffle(P.map((_,i)=>i));
+    if(deck[deck.length-1]===lastIdx && deck.length>1){ [deck[0],deck[deck.length-1]]=[deck[deck.length-1],deck[0]]; }
+  }
+  lastIdx=deck.pop(); return lastIdx;
+}
+function setStreak(n,pop){
+  streak=n; if(n>best) best=n;
+  document.getElementById('sn').textContent=n;
+  document.getElementById('sb').textContent=best;
+  if(pop){const s=document.getElementById('streak');s.classList.remove('pop');void s.offsetWidth;s.classList.add('pop');}
+}
+function soloNext(){
+  if(soloBoard) soloBoard.destroy();
+  const card=document.getElementById('soloCard');
+  soloBoard=Board(card,[prepare(P[nextIndex()])],{
+    battle:false,
+    onResult:ok=>{ card.className='card '+(ok?'ok':'ng'); setStreak(ok?streak+1:0,ok); },
+    onNext:()=>{ card.className='card'; soloNext(); }
+  });
+  soloBoard.start();
+}
+function startSolo(){ show('solo'); streak=0; setStreak(0,false); document.getElementById('soloCard').className='card'; soloNext(); }
+document.getElementById('goSolo').onclick=startSolo;
+document.getElementById('soloBack').onclick=()=>{ if(soloBoard){soloBoard.destroy();soloBoard=null;} show('menu'); };
+
+/* ---------- 対戦モード ---------- */
+let battle=null;
+function startBattle(){
+  show('battle');
+  if(battle) battle.stop();
+  const items=shuffle(P).slice(0,BATTLE_N).map(prepare);   // 2人とも同じ3問・同じ順番・同じ選択肢順
+  const pads=[document.getElementById('padA'),document.getElementById('padB')];
+  const names=['プレイヤー1','プレイヤー2'];
+  const solved=[0,0]; let ended=false, t0=0, tick=null; const boards=[], timeouts=[];
+  pads.forEach((pad,i)=>{
+    pad.innerHTML=`<div class="hd"><span>${names[i]}</span><span class="dots"></span><span class="tm">0.0秒</span><button class="hbtn" data-back>← 最初の画面へ</button></div>
+      <div class="bwrap"></div><div class="overlay"><div class="count">3</div></div>`;
+    pad.querySelector('[data-back]').onclick=()=>{ stop(); show('menu'); };
+    dots(i);
+  });
+  function dots(i){
+    pads[i].querySelector('.dots').innerHTML=Array.from({length:items.length},(_,k)=>`<span class="${k<solved[i]?'on':'off'}">●</span>`).join('');
+  }
+  function stop(){ ended=true; clearInterval(tick); timeouts.forEach(clearTimeout); boards.forEach(b=>b.destroy()); }
+  function finish(w){
+    if(ended) return; ended=true; clearInterval(tick);
+    const sec=((performance.now()-t0)/1000).toFixed(1);
+    boards.forEach(b=>b.destroy());
+    pads.forEach((pad,i)=>{
+      const win=i===w;
+      let ov=pad.querySelector('.overlay');
+      if(!ov){ ov=document.createElement('div'); pad.appendChild(ov); }
+      ov.className='overlay '+(win?'win':'lose');
+      ov.innerHTML=`<div class="mid">${win?'🏆 勝利！':'負け…'}</div>
+        <div class="sm">${win?`${sec}秒で ${items.length}問クリア`:`${solved[i]} / ${items.length}問 正解`}</div>
+        <div class="row2"><button data-again>もう一度</button><button class="ghost" data-menu>メニューへ</button></div>`;
+      ov.querySelector('[data-again]').onclick=startBattle;
+      ov.querySelector('[data-menu]').onclick=()=>{ stop(); show('menu'); };
+    });
+  }
+  battle={stop};
+  ['3','2','1','スタート！'].forEach((s,k)=>{
+    timeouts.push(setTimeout(()=>{
+      pads.forEach(pad=>{ const c=pad.querySelector('.overlay .count'); if(c){ c.textContent=s; if(k===3) c.style.fontSize='18cqh'; } });
+      if(k===3) timeouts.push(setTimeout(go,500));
+    },k*900));
+  });
+  function go(){
+    if(ended) return;
+    pads.forEach((pad,i)=>{
+      const ov=pad.querySelector('.overlay'); if(ov) ov.remove();
+      const b=Board(pad.querySelector('.bwrap'),items,{
+        battle:true, compact:true, penalty:PENALTY_MS, nextMs:NEXT_MS,
+        onSolve:()=>{ solved[i]++; dots(i); },
+        onFinish:()=>finish(i)
+      });
+      boards.push(b); b.start();
+    });
+    t0=performance.now();
+    tick=setInterval(()=>{
+      const s=((performance.now()-t0)/1000).toFixed(1)+'秒';
+      pads.forEach(pad=>{ const e=pad.querySelector('.tm'); if(e) e.textContent=s; });
+    },100);
+  }
+}
+document.getElementById('goBattle').onclick=startBattle;
+</script>
+</body>
+</html>
